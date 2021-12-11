@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Simple Timer</title>
+<meta charset="utf-8">
+<style>
+body { background: silver; }
+
+#timer {
+	display: flex;
+	align-items: center;
+	flex-direction: column;
+	width: 20rem;
+	position: absolute;
+	top: 6rem;
+	left: 50%;
+	transform: translateX(-50%);
+	font-family: monospace;
+	overflow: none;
+}
+
+#clock { 
+	font-size: 6rem;
+}
+
+#controls {
+	width:100%;
+	display: flex;
+	gap: .5rem;
+	align-items: middle;
+}
+
+.control {
+	border-radius: 3px;
+	background: gray;
+	padding: .5rem;
+	text-align: center;
+	cursor: pointer;
+	flex-grow: 1;
+}
+
+#resets {
+	margin-top: .5rem;
+	display: flex;
+	gap: .5rem;
+	flex-wrap: wrap;
+}
+
+.reset-dot {
+	border-radius:50%;
+	background-color: gray;
+	width: 1.5rem;
+	height: 1.5rem;
+}
+
+.delay { background-color: gray; }
+.done {	background-color: rgb(85, 185, 85); }
+.expire { background-color: rgb(185, 85, 85); }
+.pause { background-color: rgb(135, 135, 185); }
+
+.paused {
+  animation: blinker 2s linear infinite;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 20%;
+  }
+}
+
+@media only screen and (max-width: 1200px) {
+	#timer {width: unset; position: block; margin: auto; padding: .5rem; top:0;}
+	#clock { font-size: 25vw; }
+	.control {font-size: 3vw; padding:4rem .5rem;}
+	.reset-dot {width: 6vw; height: 6vw}
+}
+
+</style>
+</head>
+<body>
+<div id="timer">
+	<div id="clock" class="paused">15:00</div>
+	<div id="controls">
+		<div id="pause" class="control pause" onClick="togglePause()">Start</div>		
+		<div class="control done" onClick="addTime(15, 1)">Done +15:00</div>
+		<div class="control delay" onClick="addTime(5, 0)">Delay +5:00</div>
+		<div class="control" onClick="resetTimer()">Clr</div>
+	</div>
+	<div id="resets"></div>
+</div>
+<script>
+let count = 15 * 60;
+let pause = true;
+
+const doneDiv = "<div class='reset-dot done'></div>";
+const delayDiv = "<div class='reset-dot delay'></div>";
+const pauseDiv = "<div class='reset-dot pause'></div>";
+const expireDiv = "<div class='reset-dot expire'></div>";
+
+function resetTimer() {
+	if (typeof(Storage) !== "undefined") window.localStorage.clear();
+	count = 15 * 60;
+	pause = true;
+	document.getElementById("resets").innerHTML = "";
+	refreshClock();
+}
+
+function saveState() {
+	if (typeof(Storage) !== "undefined") {
+		window.localStorage.setItem('count', count);
+		window.localStorage.setItem('pause', pause);
+		window.localStorage.setItem('timerHTML', document.getElementById("timer").innerHTML);		
+    }
+}
+
+function recoverState() {
+	if (typeof(Storage) !== "undefined") {
+    	let storedCount = window.localStorage.getItem("count")
+		if(storedCount != null && storedCount != NaN) count = parseInt(storedCount);
+    	
+		let storedPause = window.localStorage.getItem("pause");
+		if(storedPause != null) pause = storedPause;
+
+		let storedDots = window.localStorage.getItem("timerHTML");
+		if(storedDots != null) document.getElementById("timer").innerHTML = storedDots;
+    }
+}
+
+function refreshClock() {
+    let min = Math.floor(count / 60);
+    if(min < 10) { min = "0" + min; }
+
+    let sec = count % 60;
+    if(sec < 10) { sec = "0" + sec; }
+
+    document.getElementById("clock").innerHTML = `${min}:${sec}`;
+	saveState();
+}
+
+function addTime(minutes, done) {
+	count += minutes * 60;
+	if(done) {
+		document.getElementById("resets").innerHTML += doneDiv;
+	} else {
+		document.getElementById("resets").innerHTML += delayDiv;
+	}
+	refreshClock();
+}
+
+function togglePause() {
+	pause = !pause;
+	if(pause) {
+		document.getElementById("clock").classList.add("paused");
+		document.getElementById("resets").innerHTML += pauseDiv;
+		document.getElementById("pause").innerHTML = "Start";
+	} else {
+		document.getElementById("clock").classList.remove("paused");
+		document.getElementById("pause").innerHTML = "Pause";
+	}
+	refreshClock();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    recoverState();
+}, false);
+
+// Assign a timed event to variable timerId.
+const timerId = setInterval(() => {
+
+	if (count > 0 && !pause) {
+		// Decrement the count variable by one.
+		count--;		
+		if(count == 0) document.getElementById("resets").innerHTML += expireDiv;
+		refreshClock();
+		}
+    
+}, 1000); // Execute event every second (1000 milliseconds = 1 second).
+</script>
+
+</body>
+</html>
