@@ -30,6 +30,13 @@ body { background: silver; }
 	align-items: middle;
 }
 
+#extraClocks {
+	display: flex;
+	justify-content: space-evenly;
+	gap: 5rem;
+	color: gray;
+}
+
 .control {
 	border-radius: 3px;
 	background: gray;
@@ -80,83 +87,123 @@ body { background: silver; }
 <body>
 <div id="timer">
 	<div id="clock" class="paused">15:00</div>
+	<div id="extraClocks">
+		<div>Shift: <span id="shiftClock">1:00</span></div>
+		<div>Elapsed: <span id="elapsedClock">0:00</span></div>
+	</div>
 	<div id="controls">
 		<div id="pause" class="control pause" onClick="togglePause()">Start</div>		
-		<div class="control done" onClick="addTime(15, 1)">Done +15:00</div>
-		<div class="control delay" onClick="addTime(5, 0)">Delay +5:00</div>
+		<div class="control done" onClick="addTime(15, 1)">+Ticket</div>			
+		<div style="display:flex; flex-direction: column; gap: 5px;">
+			<div class="control done" onClick="addTime(0, 1)">+Chat</div>
+			<div class="control delay" onClick="addTime(5, 0)">-Delay</div>			
+		</div>
+		<div style="display:flex; flex-direction: column; gap: 5px;">
+			<div class="control" onClick="addShiftTime(15)">+Shift</div>
+			<div class="control" onClick="addShiftTime(-15)">-Shift</div>			
+		</div>
 		<div class="control" onClick="resetTimer()">Clr</div>
 	</div>
 	<div id="resets"></div>
 </div>
 <script>
-let count = 15 * 60;
-let pause = true;
+const defaultTimerLength = 15 * 60; // 15 minutes default
+const defaultShiftLength = 60 * 60; // 15 minutes default
 
-const doneDiv = "<div class='reset-dot done'></div>";
-const delayDiv = "<div class='reset-dot delay'></div>";
-const pauseDiv = "<div class='reset-dot pause'></div>";
-const expireDiv = "<div class='reset-dot expire'></div>";
+let defaultState = {
+	"count": 		defaultTimerLength, 
+	"pause": 		true,
+	"shiftTime":	defaultShiftLength,
+	"elapsed":		0
+};
+
+let state = Object.assign({}, defaultState);
+
+function newDot(cssClass = "") {
+	return `<div class='reset-dot ${cssClass}'></div>`;
+}
 
 function resetTimer() {
 	if (typeof(Storage) !== "undefined") window.localStorage.clear();
-	count = 15 * 60;
-	pause = true;
+	state = Object.assign({}, defaultState);
 	document.getElementById("resets").innerHTML = "";
+	setPauseDisplay(0);
 	refreshClock();
 }
 
 function saveState() {
 	if (typeof(Storage) !== "undefined") {
-		window.localStorage.setItem('count', count);
-		window.localStorage.setItem('pause', pause);
+		window.localStorage.setItem('state', JSON.stringify(state));
 		window.localStorage.setItem('timerHTML', document.getElementById("timer").innerHTML);		
     }
 }
 
 function recoverState() {
 	if (typeof(Storage) !== "undefined") {
-    	let storedCount = window.localStorage.getItem("count")
-		if(storedCount != null && storedCount != NaN) count = parseInt(storedCount);
-    	
-		let storedPause = window.localStorage.getItem("pause");
-		if(storedPause != null) pause = storedPause;
-
+		if(window.localStorage.getItem("state") != null) {
+			state = JSON.parse(window.localStorage.getItem("state"));
+		}		
 		let storedDots = window.localStorage.getItem("timerHTML");
 		if(storedDots != null) document.getElementById("timer").innerHTML = storedDots;
+		setPauseDisplay(0);
+		refreshClock();
     }
 }
 
-function refreshClock() {
-    let min = Math.floor(count / 60);
+function formatTime(secTotal, forceHours = 0, showSeconds = 1) {
+	let hr = Math.floor(secTotal / 3600);
+    if(hr < 1 && !forceHours) { hr = "" } else { hr = hr + ":"; }
+
+	let min = Math.floor(secTotal / 60) % 60;
     if(min < 10) { min = "0" + min; }
 
-    let sec = count % 60;
-    if(sec < 10) { sec = "0" + sec; }
+	let sec = "";
+	if(showSeconds) {
+		sec = secTotal % 60;
+		if(sec < 10) sec = "0" + sec;
+		sec = ":" + sec;
+	}
 
-    document.getElementById("clock").innerHTML = `${min}:${sec}`;
+    return `${hr}${min}${sec}`;
+}
+
+function refreshClock() {
+    document.getElementById("clock").innerHTML = formatTime(state.count);
+	document.getElementById("shiftClock").innerHTML = formatTime(state.shiftTime, 1, 0);
+	document.getElementById("elapsedClock").innerHTML = formatTime(state.elapsed, 1, 0);
 	saveState();
 }
 
 function addTime(minutes, done) {
-	count += minutes * 60;
+	state.count += minutes * 60;
+	state.count = Math.min(state.count, state.shiftTime);
 	if(done) {
-		document.getElementById("resets").innerHTML += doneDiv;
+		document.getElementById("resets").innerHTML += newDot("done");
 	} else {
-		document.getElementById("resets").innerHTML += delayDiv;
+		document.getElementById("resets").innerHTML += newDot("delay");
 	}
 	refreshClock();
 }
 
-function togglePause() {
-	pause = !pause;
-	if(pause) {
+function addShiftTime(minutes) {
+	state.shiftTime += minutes * 60;
+	refreshClock();
+}
+
+function setPauseDisplay(setDot = 1) {
+	if(state.pause) {
 		document.getElementById("clock").classList.add("paused");
-		document.getElementById("resets").innerHTML += pauseDiv;
+		if(setDot) document.getElementById("resets").innerHTML += newDot("pause");
 		document.getElementById("pause").innerHTML = "Start";
 	} else {
 		document.getElementById("clock").classList.remove("paused");
 		document.getElementById("pause").innerHTML = "Pause";
 	}
+}
+
+function togglePause() {
+	state.pause = !state.pause;
+	setPauseDisplay();
 	refreshClock();
 }
 
@@ -166,14 +213,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Assign a timed event to variable timerId.
 const timerId = setInterval(() => {
-
-	if (count > 0 && !pause) {
+	if (state.count > 0 && !state.pause) {
 		// Decrement the count variable by one.
-		count--;		
-		if(count == 0) document.getElementById("resets").innerHTML += expireDiv;
-		refreshClock();
-		}
-    
+		state.count--;		
+		if(state.count == 0) document.getElementById("resets").innerHTML += newDot("expire");	
+		if(state.shiftTime > 0) state.shiftTime--;	
+	}
+	state.elapsed++;
+	refreshClock();
+
 }, 1000); // Execute event every second (1000 milliseconds = 1 second).
 </script>
 
