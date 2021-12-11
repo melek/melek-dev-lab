@@ -168,7 +168,7 @@ function formatTime(secTotal, forceHours = 0, showSeconds = 1) {
 }
 
 function refreshClock() {
-    document.getElementById("clock").innerHTML = formatTime(state.count);
+    document.getElementById("clock").innerHTML = formatTime(Math.min(state.count, state.shiftTime));
 	document.getElementById("shiftClock").innerHTML = formatTime(state.shiftTime, 1, 0);
 	document.getElementById("elapsedClock").innerHTML = formatTime(state.elapsed, 1, 0);
 	saveState();
@@ -176,7 +176,6 @@ function refreshClock() {
 
 function addTime(minutes, done) {
 	state.count += minutes * 60;
-	state.count = Math.min(state.count, state.shiftTime);
 	if(done) {
 		document.getElementById("resets").innerHTML += newDot("done");
 	} else {
@@ -217,8 +216,9 @@ const timerId = setInterval(() => {
 		// Decrement the count variable by one.
 		state.count--;		
 		if(state.count == 0) document.getElementById("resets").innerHTML += newDot("expire");	
-		if(state.shiftTime > 0) state.shiftTime--;	
+		
 	}
+	if(state.shiftTime > 0) state.shiftTime--;	
 	state.elapsed++;
 	refreshClock();
 
