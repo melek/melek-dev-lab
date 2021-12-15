@@ -4,42 +4,69 @@
 <title>Simple Timer</title>
 <meta charset="utf-8">
 <style>
-body { background: silver; }
+:root {
+	--bg-fallback: rgb(38,70,83);
+	--bg: linear-gradient(0deg, rgba(38,70,83,1) 0%, rgba(42,157,143,1) 50%);
+	--textColor: white;
+	--clockTextColor: white;	
+	--control-Secondary: rgba(128,196,152, .5);
+	--control-Primary: rgba(255, 161, 122, .5);
+	--control-Good: rgba(182, 243, 156, .5); 
+	--control-Bad: rgb(160, 40, 40, .5); 
+}
+
+body { 
+	margin:0;
+	padding: 0;
+	background: var(--bg-fallback);	
+	background: linear-gradient(0deg, rgba(38,70,83,1) 0%, rgba(42,157,143,1) 50%);
+	color: var(--textColor);
+}
 
 #timer {
+	padding: 0;
+	margin: 0;
+	height: 100%;
+	min-height: 100vh;
+	min-width: 100vw;
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	flex-direction: column;
-	width: 20rem;
-	position: absolute;
-	top: 6rem;
-	left: 50%;
-	transform: translateX(-50%);
-	font-family: monospace;
-	overflow: none;
-}
-
-#clock { 
-	font-size: 6rem;
-}
-
-#controls {
-	width:100%;
-	display: flex;
 	gap: .5rem;
-	align-items: middle;
+}
+
+#timer > div {
+	text-align: center;
+	min-width: 50vmin;
+	max-width: 95vmin;
+}
+
+#mainClock {
+	font-size: 25vmin;
+}
+
+.clock { 
+	font-family: monospace;
+	color: var(--clockTextColor);
 }
 
 #extraClocks {
 	display: flex;
+	font-size: 1rem;
 	justify-content: space-evenly;
 	gap: 5rem;
-	color: gray;
+}
+
+#controls {
+	display: flex;
+	gap: .5rem;
+	justify-content: center;
 }
 
 .control {
 	border-radius: 3px;
-	background: gray;
+	background: var(--control-Secondary);
 	padding: .5rem;
 	text-align: center;
 	cursor: pointer;
@@ -55,15 +82,15 @@ body { background: silver; }
 
 .reset-dot {
 	border-radius:50%;
-	background-color: gray;
+	background-color: var(--control-Secondary);
 	width: 1.5rem;
 	height: 1.5rem;
 }
 
-.delay { background-color: gray; }
-.done {	background-color: rgb(85, 185, 85); }
-.expire { background-color: rgb(185, 85, 85); }
-.pause { background-color: rgb(135, 135, 185); }
+.delay { background-color: var(--control-Seconder); }
+.done {	background-color: var(--control-Good); }
+.expire { background-color: var(--control-Bad); }
+.pause { background-color: var(--control-Primary); }
 
 .paused {
   animation: blinker 2s linear infinite;
@@ -75,29 +102,18 @@ body { background: silver; }
   }
 }
 
-@media only screen and (max-width: 1200px) {
-	#timer {width: unset; position: block; margin: auto; padding: .5rem; top:0;}
-	#clock { font-size: 25vw; }
-	.control {font-size: 3vw; padding:4rem .5rem;}
-	.reset-dot {width: 6vw; height: 6vw}
-}
-
 </style>
 </head>
-<body>
-<div id="timer">
-	<div id="clock" class="paused">15:00</div>
+<body><div id="timer">
+	<div id="mainClock" class="clock paused">15:00</div>
 	<div id="extraClocks">
-		<div>Shift: <span id="shiftClock">1:00</span></div>
-		<div>Elapsed: <span id="elapsedClock">0:00</span></div>
+		<div>Shift: <span id="shiftClock" class="clock paused">1:00</span></div>
+		<div>Elapsed: <span id="elapsedClock" class="clock paused">0:00</span></div>
 	</div>
 	<div id="controls">
 		<div id="pause" class="control pause" onClick="togglePause()">Start</div>		
-		<div class="control done" onClick="addTime(15, 1)">+Ticket</div>			
-		<div style="display:flex; flex-direction: column; gap: 5px;">
-			<div class="control done" onClick="addTime(0, 1)">+Chat</div>
-			<div class="control delay" onClick="addTime(5, 0)">-Delay</div>			
-		</div>
+		<div class="control done" onClick="addTime(15, 1)">Ticket (+15m)</div>			
+			<div class="control done" onClick="addTime(0, 1)">Chat</div>
 		<div style="display:flex; flex-direction: column; gap: 5px;">
 			<div class="control" onClick="addShiftTime(15)">+Shift</div>
 			<div class="control" onClick="addShiftTime(-15)">-Shift</div>			
@@ -113,6 +129,7 @@ const defaultShiftLength = 60 * 60; // 15 minutes default
 let defaultState = {
 	"count": 		defaultTimerLength, 
 	"pause": 		true,
+	"allpause": 	true,
 	"shiftTime":	defaultShiftLength,
 	"elapsed":		0
 };
@@ -168,19 +185,15 @@ function formatTime(secTotal, forceHours = 0, showSeconds = 1) {
 }
 
 function refreshClock() {
-    document.getElementById("clock").innerHTML = formatTime(Math.min(state.count, state.shiftTime));
+    document.getElementById("mainClock").innerHTML = formatTime(Math.min(state.count, state.shiftTime));
 	document.getElementById("shiftClock").innerHTML = formatTime(state.shiftTime, 1, 0);
 	document.getElementById("elapsedClock").innerHTML = formatTime(state.elapsed, 1, 0);
 	saveState();
 }
 
-function addTime(minutes, done) {
+function addTime(minutes, color = "") {
 	state.count += minutes * 60;
-	if(done) {
-		document.getElementById("resets").innerHTML += newDot("done");
-	} else {
-		document.getElementById("resets").innerHTML += newDot("delay");
-	}
+	document.getElementById("resets").innerHTML += newDot(color);
 	refreshClock();
 }
 
@@ -191,17 +204,18 @@ function addShiftTime(minutes) {
 
 function setPauseDisplay(setDot = 1) {
 	if(state.pause) {
-		document.getElementById("clock").classList.add("paused");
+		document.getElementById("mainClock").classList.add("paused");
 		if(setDot) document.getElementById("resets").innerHTML += newDot("pause");
 		document.getElementById("pause").innerHTML = "Start";
 	} else {
-		document.getElementById("clock").classList.remove("paused");
+		document.getElementById("mainClock").classList.remove("paused");
 		document.getElementById("pause").innerHTML = "Pause";
 	}
 }
 
 function togglePause() {
 	state.pause = !state.pause;
+	state.allpause = 0;
 	setPauseDisplay();
 	refreshClock();
 }
@@ -215,15 +229,14 @@ const timerId = setInterval(() => {
 	if (state.count > 0 && !state.pause) {
 		// Decrement the count variable by one.
 		state.count--;		
-		if(state.count == 0) document.getElementById("resets").innerHTML += newDot("expire");	
-		
+		if(state.count == 0) addTime(5, "expire");
 	}
-	if(state.shiftTime > 0) state.shiftTime--;	
-	state.elapsed++;
+	if (!state.allpause) {
+		if(state.shiftTime > 0) state.shiftTime--;
+		state.elapsed++;
+	}
 	refreshClock();
 
 }, 1000); // Execute event every second (1000 milliseconds = 1 second).
-</script>
-
-</body>
+</script></body>
 </html>
