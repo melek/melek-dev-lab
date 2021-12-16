@@ -1,0 +1,105 @@
+:root {
+    font-size: 16px;
+	--bg-light: rgb(42,157,143);
+    --bg-dark: rgb(38,70,83);
+    --bg-fallback: var(--bg-light);
+	--bg: linear-gradient(0deg, var(--bg-dark) 0%, var(--bg-light) 50%);
+	--textColor: white;
+	--clockTextColor: white;	
+	--control-Secondary: rgba(128,196,152, .5);
+	--control-Primary: rgba(255, 161, 122, .75);
+	--control-Good: rgba(182, 243, 156, .5); 
+	--control-Bad: rgba(160, 80, 80, .75); 
+}
+
+body { 
+	margin:0;
+	padding: 0;
+	background: var(--bg-fallback);	
+	background: linear-gradient(0deg, rgba(38,70,83,1) 0%, rgba(42,157,143,1) 50%);
+	color: var(--textColor);
+}
+
+#timer {
+	padding: 0;
+	margin: 0;
+	height: 100%;
+	min-height: 100vh;
+	min-width: 100vw;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	gap: .5rem;
+}
+
+#timer > div {
+	text-align: center;
+	min-width: 50vmin;
+	max-width: 95vmin;
+}
+
+#mainClock {
+	font-size: 25vmin;
+}
+
+.clock { 
+	font-family: monospace;
+	color: var(--clockTextColor);
+}
+
+#extraClocks {
+	display: flex;
+	font-size: 1rem;
+	justify-content: space-evenly;
+	gap: 5rem;
+}
+
+#controls {
+	display: flex;
+	gap: .5rem;
+	justify-content: center;
+}
+
+.control {
+	border-radius: 3px;
+	background: var(--control-Secondary);
+	padding: .5rem;
+	text-align: center;
+	cursor: pointer;
+	flex-grow: 1;
+}
+
+#resets {
+	margin-top: .5rem;
+	display: flex;
+	gap: .5rem;
+	flex-wrap: wrap;
+}
+
+.reset-dot {
+	border-radius:50%;
+	background-color: var(--control-Secondary);
+	width: 1.5rem;
+	height: 1.5rem;
+}
+
+.delay { background: var(--control-Seconder); }
+.done {	background: var(--control-Good); }
+.expire { background: var(--control-Bad); }
+.pause { background: var(--control-Primary); }
+
+.paused {
+	transition: 1s opacity linear;
+  animation: blinker 2s linear infinite;
+}
+
+:not(.paused) {
+	transition: 1s * linear;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 20%;
+  }
+}

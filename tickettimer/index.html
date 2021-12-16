@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Simple Timer</title>
+<meta charset="utf-8">
+<link href="css/style.css" rel="stylesheet">
+</head>
+<body><div id="timer">
+	<div id="mainClock" class="clock paused">15:00</div>
+	<div id="extraClocks">
+		<div>Shift: <span id="shiftClock" class="clock paused">1:00</span></div>
+		<div>Elapsed: <span id="elapsedClock" class="clock paused">0:00</span></div>
+	</div>
+	<div id="controls">
+		<div id="pause" class="control pause" onClick="togglePause()">Start</div>		
+		<div class="control done" onClick="addTime(15, 'done')">Ticket (+15m)</div>			
+			<div class="control done" onClick="addTime(0, 'done')">Chat</div>
+		<div style="display:flex; flex-direction: column; gap: 5px;">
+			<div class="control" onClick="addShiftTime(15)">+Shift</div>
+			<div class="control" onClick="addShiftTime(-15)">-Shift</div>			
+		</div>
+		<div class="control" onClick="resetTimer()">Clr</div>
+	</div>
+	<div id="resets"></div>
+</div>
+<script src="js/main.js"></script>
+</body>
+</html>
