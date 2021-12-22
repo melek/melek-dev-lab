@@ -1,11 +1,27 @@
-class dev.melek.Clock {
-  constructor(initialDate = new Date()) {  // Constructor
-    this.moment = initialDate; // The Reference time is used for timers and countdowns.
-    this.timezone = 0; // The Timezone is used for clock displays. It is an integer for UTC offset.
-    this.direction = forward;
-    this.paused = null; // Pausing a countdown or timer 
-  }
+class FlexTimer {
+    constructor(initialDate = new Date()) {  // Constructor
+        this._alarmTime  = initialDate; // Date in Milliseconds to count down/up to.
+        this._isPaused   = null;        
+        this._pausedTime = 0;           // Offset from _alarmTime in Milliseconds when the timer was last paused.
+    }
 
+    start(initialDate = new Date()) {
+        this._moment = initialDate;
+    }
 
-}
+    format(newFormat) {
+        this._format = newFormat;
+    }
+
+    timer() {
+        
+    }
+
+    countdown() {
+        return 
+    }
+
+    printClock(tz = this._timeZone) {
+        return new Date(this.format(tz));
+    }
 }
