@@ -1,27 +1,72 @@
 class FlexTimer {
     constructor(initialDate = new Date()) {  // Constructor
-        this._alarmTime  = initialDate; // Date in Milliseconds to count down/up to.
-        this._isPaused   = null;        
-        this._pausedTime = 0;           // Offset from _alarmTime in Milliseconds when the timer was last paused.
+        this._referenceTime  = initialDate; // Date in Milliseconds to count down/up to.       
+        this._pausedTime = null;           // Offset from _alarmTime in Milliseconds when the timer was last paused.
+        this.type        = this._implicitType(initialDate);
+      }
+
+    get _implicitType() {
+      if(this._referenceTime > Date()) {
+        return "countdown";
+      }
+      else {
+        return "countup";
+      }
     }
 
-    start(initialDate = new Date()) {
-        this._moment = initialDate;
+    get _countdown() {
+      Math.max(Date() - this._referenceTime, 0);
     }
 
-    format(newFormat) {
-        this._format = newFormat;
+    get _countup() {
+      Math.max(this._referenceTime - Date(), 0);
     }
 
-    timer() {
-        
+    get _timerValue(displayType = this.type) {
+      if(displayType == "countdown") {
+        return this._countdown();
+      } else {
+        return this._countup();
+      }
     }
 
-    countdown() {
-        return 
+    _toTimeString(dateToFormat) {
+      if(dateToFormat instanceof Number || dateToFormat instanceof String) {
+        dateToFormat = new Date(dateToFormat);
+      } 
+      if( !(dateToFormat instanceof Date) ) {
+        throw "FlexTimer._toTimeString requires a Date object, Number, or String.";
+      }
+      return dateToFormat.toTimeString().substring(0,8);
     }
 
-    printClock(tz = this._timeZone) {
-        return new Date(this.format(tz));
+    valueOf() {
+      return this._toTimeString(this._timerValue);
+    }
+  
+    reset(newReferenceTime = new Date()) {
+        this._referenceTime = newReferenceTime;
+    }
+
+    get isPaused() {
+      if(this._pausedTime instanceof Date) {
+        return true;
+      }
+      else {
+        return false;
+      }
+    }
+
+    pause() {
+      if(this.isPaused) {
+        this._pausedTime = new Date();
+      }
+    }
+
+    unpause() {
+      if(this.isPaused) {
+        this._referenceTime = new Date(Date() + (this._referenceTime - this.timePaused));
+        this._pausedTime = null;
+      }
     }
 }
