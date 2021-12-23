@@ -6,7 +6,9 @@ const defaultShiftLength 	 = 60 * 60; // 60 minutes default
 
 /* State Management */
 /********************/
-let defaultState = {
+function getDefaultState() {
+	return {
+	"countDown":		new FlexTimer(15, true),
 	"count": 			defaultTimerLength, 
 	"pause": 			true,
 	"allpause": 		true,
@@ -14,8 +16,9 @@ let defaultState = {
 	"elapsed":			0,
 	"startTime":		null,
 	"ticketTimeBonus": 	defaultTicketTimeBonus
-};
-let state = Object.assign({}, defaultState);
+	};
+}
+let state = Object.assign({}, getDefaultState());
 
 function saveState() {
 	if (typeof(Storage) !== "undefined") {
@@ -28,6 +31,7 @@ function recoverState() {
 	if (typeof(Storage) !== "undefined") {
 		if(window.localStorage.getItem("state") != null) {
 			state = JSON.parse(window.localStorage.getItem("state"));
+			state.countDown = new FlexTimer().parse(state.countDown);			
 		}
 		let storedDots = window.localStorage.getItem("timerHTML");
 		if(storedDots != null) document.getElementById("timer").innerHTML = storedDots;
@@ -122,6 +126,12 @@ function addShiftTime(minutes) {
 }
 
 function setPause(newPause, newAllPause) {
+	if(newPause == true) {
+		state.countDown.pause();
+	} 
+	else {
+		state.countDown.unpause();
+	}
 	state.pause = newPause;
 	state.allpause = newAllPause;
 	setPauseDisplay(!newAllPause);
@@ -135,7 +145,7 @@ function togglePause() {
 
 function resetTimer() {
 	if (typeof(Storage) !== "undefined") window.localStorage.clear();
-	state = Object.assign({}, defaultState);
+	state = Object.assign({}, getDefaultState());
 	document.getElementById("resets").innerHTML = "";
 	setActionLabel("Start");
 	setPause(1, 1);
