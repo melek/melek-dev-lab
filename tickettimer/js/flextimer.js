@@ -1,5 +1,9 @@
 class FlexTimer {
   constructor(minuteOffset = 0, forceHours = false, startPaused = false) {  // constructor
+    this.reset(minuteOffset, forceHours, startPaused);
+  }
+
+  reset(minuteOffset = 0, forceHours = this._format.forceHours, startPaused = true) {  // deferred constructor
     let newReferenceDate;
     if (minuteOffset == 0) {
       newReferenceDate = new Date();
@@ -10,7 +14,7 @@ class FlexTimer {
       newReferenceDate = new Date(nowInMs + msOffset);
     }
 
-    this._referenceDate = newReferenceDate;     // Date to count down to or up from.
+    this._referenceDate = newReferenceDate; // Date to count down to or up from.
     this.type = this._implicitType;
     this._format = {
       "forceHours": forceHours
@@ -24,7 +28,6 @@ class FlexTimer {
       this._pausedDate = null;
       this._valueAtPause = null;
     }
-
   }
 
   parse(source) {
@@ -56,6 +59,13 @@ class FlexTimer {
     }
   }
 
+  addMinutes(minutes) {
+    if(this.type == "countup") {
+      minutes *= -1; // Pull the reference date earlier to make countup timers appear to increase.
+    }
+    this._referenceDate = new Date(this._referenceDate.getTime() + minutes * 60000);
+  }
+
   get _countup() {
     let now = new Date().getTime();
     return Math.max(0, now - this._referenceTime);
@@ -78,8 +88,8 @@ class FlexTimer {
   }
 
   _toTimeString(msTotal, forceHours = this._format.forceHours) {
-    let secTotal = Math.round(msTotal / 1000);
-    let hr = Math.round(secTotal / 3600);
+    let secTotal = Math.floor(msTotal / 1000);
+    let hr = Math.floor(secTotal / 3600);
     if (hr < 1) {
       if (forceHours) {
         hr = "";
@@ -88,7 +98,7 @@ class FlexTimer {
         hr = hr + ":";
       }
     }
-    let min = Math.round(secTotal / 60) % 60;
+    let min = Math.floor(secTotal / 60) % 60;
     if (min < 10) { min = "0" + min; }
 
     let sec = "";
@@ -97,19 +107,6 @@ class FlexTimer {
     sec = ":" + sec;
 
     return `${hr}${min}${sec}`;
-  }
-
-  // Positive values will set a countdown timer; Values <= 0 will set an elapsed timer.
-  reset(minuteOffset = 0) {
-    if (minuteOffset == 0) {
-      this.constructor();
-    }
-    else {
-      let msOffset = minuteOffset * 60000;
-      let nowInMs = new Date().getTime();
-      let newDate = new Date(nowInMs + msOffset);
-      this.constructor(newDate);
-    }
   }
 
   get _pausedTime() {

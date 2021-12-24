@@ -8,7 +8,9 @@ const defaultShiftLength 	 = 60 * 60; // 60 minutes default
 /********************/
 function getDefaultState() {
 	return {
-	"countDown":		new FlexTimer(15, true),
+	"ticketCountDown":	new FlexTimer(15, true),
+	"shiftCountDown":	new FlexTimer(60, true, true),
+	"elapsedCountUp":	new FlexTimer(0, true, true),
 	"count": 			defaultTimerLength, 
 	"pause": 			true,
 	"allpause": 		true,
@@ -19,6 +21,11 @@ function getDefaultState() {
 	};
 }
 let state = Object.assign({}, getDefaultState());
+
+// Some references, quicker to type. :P
+let timer 	= state.ticketCountDown;
+let shift 	= state.shiftCountDown;
+let elapsed = state.elapsedCountUp;
 
 function saveState() {
 	if (typeof(Storage) !== "undefined") {
@@ -31,7 +38,9 @@ function recoverState() {
 	if (typeof(Storage) !== "undefined") {
 		if(window.localStorage.getItem("state") != null) {
 			state = JSON.parse(window.localStorage.getItem("state"));
-			state.countDown = new FlexTimer().parse(state.countDown);			
+			state.ticketCountDown = new FlexTimer().parse(state.ticketCountDown);
+			state.shiftCountDown = new FlexTimer().parse(state.shiftCountDown);
+			state.elapsedCountUp = new FlexTimer().parse(state.elapsedCountUp);			
 		}
 		let storedDots = window.localStorage.getItem("timerHTML");
 		if(storedDots != null) document.getElementById("timer").innerHTML = storedDots;
@@ -78,7 +87,7 @@ function getElapsed() {
 }
 
 function refreshClock() {
-    document.getElementById("mainClock").innerHTML = formatTime(Math.min(state.count, state.shiftTime));
+    document.getElementById("mainClock").innerHTML = formatTime(Math.min(state.count, state.shiftTime)) + "<br>" + timer.value;
 	document.getElementById("shiftClock").innerHTML = formatTime(state.shiftTime, true);
 	if(state.startTime != null) {		
 		document.getElementById("elapsedClock").innerHTML = formatTime(getElapsed(), true);
@@ -120,6 +129,7 @@ function addTime(minutes, color = "") {
 }
 
 function addShiftTime(minutes) {
+	shiftTimer.addMinutes(minutes);
 	state.shiftTime += minutes * 60;
 	if(state.shiftTime < 0) state.shiftTime = 0;
 	refreshClock();
@@ -127,10 +137,10 @@ function addShiftTime(minutes) {
 
 function setPause(newPause, newAllPause) {
 	if(newPause == true) {
-		state.countDown.pause();
+		timer.pause();
 	} 
 	else {
-		state.countDown.unpause();
+		timer.unpause();
 	}
 	state.pause = newPause;
 	state.allpause = newAllPause;
