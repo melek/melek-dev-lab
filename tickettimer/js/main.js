@@ -1,31 +1,38 @@
 /* Enumeration */
 /***************/
-const defaultTimerLength 	 = 15 * 60; // 15 minutes default
+const defaultTimerLength 	 = 15; // 15 minutes default
 const defaultTicketTimeBonus = defaultTimerLength;
-const defaultShiftLength 	 = 60 * 60; // 60 minutes default
+const defaultShiftLength 	 = 60; // 60 minutes default
 
 /* State Management */
 /********************/
 function getDefaultState() {
 	return {
-	"ticketCountDown":	new FlexTimer(15, true),
-	"shiftCountDown":	new FlexTimer(60, true, true),
-	"elapsedCountUp":	new FlexTimer(0, true, true),
-	"count": 			defaultTimerLength, 
-	"pause": 			true,
-	"allpause": 		true,
-	"shiftTime":		defaultShiftLength,
-	"elapsed":			0,
-	"startTime":		null,
-	"ticketTimeBonus": 	defaultTicketTimeBonus
+	ticketCountDown:	new FlexTimer(defaultTimerLength, true, true),
+	shiftCountDown:		new FlexTimer(60, true, true),
+	elapsedCountUp:		new FlexTimer(0, true, true),
+	pause: 				true,
+	allpause: 			true,
+	shiftTime:			defaultShiftLength * 60,
+	elapsed:			0,
+	startTime:			null,
+	ticketTimeBonus: 	defaultTicketTimeBonus,
+	timerIsExpired:		false
 	};
 }
 let state = Object.assign({}, getDefaultState());
 
-// Some references, quicker to type. :P
-let timer 	= state.ticketCountDown;
-let shift 	= state.shiftCountDown;
-let elapsed = state.elapsedCountUp;
+// Some global references, quicker to type. :P
+var timer;
+var shift;
+var elapsed;
+
+function updateShorthandReferences() {
+	timer 	= state.ticketCountDown;
+	shift 	= state.shiftCountDown;
+	elapsed = state.elapsedCountUp;
+}
+updateShorthandReferences();
 
 function saveState() {
 	if (typeof(Storage) !== "undefined") {
@@ -38,11 +45,12 @@ function recoverState() {
 	if (typeof(Storage) !== "undefined") {
 		if(window.localStorage.getItem("state") != null) {
 			state = JSON.parse(window.localStorage.getItem("state"));
-			state.ticketCountDown = new FlexTimer().parse(state.ticketCountDown);
-			state.shiftCountDown = new FlexTimer().parse(state.shiftCountDown);
+			state.ticketCountDown = new FlexTimer().parse(state.ticketCountDown);			
+			state.shiftCountDown = new FlexTimer().parse(state.shiftCountDown);			
 			state.elapsedCountUp = new FlexTimer().parse(state.elapsedCountUp);			
-		}
-		let storedDots = window.localStorage.getItem("timerHTML");
+			updateShorthandReferences();
+		}		
+		let storedDots = window.localStorage.getItem("timerHTML");		
 		if(storedDots != null) document.getElementById("timer").innerHTML = storedDots;
 		setPauseDisplay(0);
 		refreshClock();
@@ -87,30 +95,33 @@ function getElapsed() {
 }
 
 function refreshClock() {
-    document.getElementById("mainClock").innerHTML = formatTime(Math.min(state.count, state.shiftTime)) + "<br>" + timer.value;
-	document.getElementById("shiftClock").innerHTML = formatTime(state.shiftTime, true);
+    document.getElementById("mainClock").innerHTML = timer.value;
+	document.getElementById("shiftClock").innerHTML = formatTime(state.shiftTime, true) + "<br>" + shift.value;
 	if(state.startTime != null) {		
-		document.getElementById("elapsedClock").innerHTML = formatTime(getElapsed(), true);
+		document.getElementById("elapsedClock").innerHTML = formatTime(getElapsed(), true)  + "<br>" + elapsed.value;
+
 	} else {
-		document.getElementById("elapsedClock").innerHTML = formatTime(0, true);
+		document.getElementById("elapsedClock").innerHTML = formatTime(0, true)  + "<br>" + elapsed.value;
 	}
 	saveState();
 }
 
 function setPauseDisplay(setDot = 1) {
-	if(state.pause) {
-		document.getElementById("mainClock").classList.add("paused");
-		if(!state.allpause) {
+	if(timer.isPaused) {		
+		if(!elapsed.isPaused) {
 			setActionLabel("Resume");
-			if(setDot) document.getElementById("resets").innerHTML += newDot("pause");
-		} else {
+			document.getElementById("mainClock").classList.add("paused");
+			if(setDot) {
+				document.getElementById("resets").innerHTML += newDot("pause");
+			}
+		} else { // When the elapsed timer is paused, treat the whole timer as 'Off'.
 			document.getElementById("shiftClock").classList.add("paused");
 			document.getElementById("elapsedClock").classList.add("paused");
 			setActionLabel("Start");
 		}
 	} else {
 		document.getElementById("mainClock").classList.remove("paused");
-		if(!state.allpause) {
+		if(!elapsed.isPaused) {
 			document.getElementById("shiftClock").classList.remove("paused");
 			document.getElementById("elapsedClock").classList.remove("paused");
 		}
@@ -121,21 +132,28 @@ function setPauseDisplay(setDot = 1) {
 /* Timer */
 /*********/
 function addTime(minutes, color = "") {
-	if(!state.pause) {
-		state.count += minutes * 60;
-		document.getElementById("resets").innerHTML += newDot(color);
-		refreshClock();
+	timer.addMinutes(minutes);
+	document.getElementById("resets").innerHTML += newDot(color);
+	refreshClock();
+}
+
+function addTicketTime(minutes, color = "") {
+	if(state.timerIsExpired) {
+		state.timerIsExpired = false;
+		timer.value = 0;
 	}
+	addTime(minutes, color);
 }
 
 function addShiftTime(minutes) {
-	shiftTimer.addMinutes(minutes);
+	shift.addMinutes(minutes);
 	state.shiftTime += minutes * 60;
 	if(state.shiftTime < 0) state.shiftTime = 0;
 	refreshClock();
 }
 
 function setPause(newPause, newAllPause) {
+	if(newAllPause == true) newAllPause 
 	if(newPause == true) {
 		timer.pause();
 	} 
@@ -144,18 +162,22 @@ function setPause(newPause, newAllPause) {
 	}
 	state.pause = newPause;
 	state.allpause = newAllPause;
-	setPauseDisplay(!newAllPause);
+	if(newAllPause) {
+		setPauseDisplay(!newAllPause);
+	}
 	refreshClock();
 }
 
 function togglePause() {
 	if(state.allpause && state.pause) startElapsedTimer();
+	if(timer.isPaused && shift.isPaused) elapsed.reset();
 	setPause(!state.pause);
 }
 
 function resetTimer() {
 	if (typeof(Storage) !== "undefined") window.localStorage.clear();
 	state = Object.assign({}, getDefaultState());
+	updateShorthandReferences();
 	document.getElementById("resets").innerHTML = "";
 	setActionLabel("Start");
 	setPause(1, 1);
@@ -167,9 +189,9 @@ function startElapsedTimer() {
 
 // Start the countdown timer with a 1 second interval.
 setInterval(() => {
-	if (state.count > 0 && !state.pause) {		
-		if(state.count > 0) state.count--;		
-		if(state.count == 0 && !state.pause) addTime(5, "expire");
+	if(timer.isExpired) {
+		addTime(5, "expire");
+		state.timerIsExpired = true;
 	}
 	if (!state.allpause) {
 		if(state.shiftTime > 0) state.shiftTime--;

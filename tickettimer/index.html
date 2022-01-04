@@ -12,9 +12,9 @@
 		<div>Elapsed: <span id="elapsedClock" class="clock paused">0:00</span></div>
 	</div>
 	<div id="controls">
-		<div id="pause" class="control pause" onClick="togglePause()">Start</div>		
-		<div class="control done" onClick="addTime(15, 'done')">Ticket (+15m)</div>			
-			<div class="control done" onClick="addTime(0, 'done')">Chat</div>
+		<div id="pause" data-bind-class="" data-bind-text="" class="control pause" onClick="togglePause()">Start</div>		
+		<div class="control done" onClick="addTicketTime(15, 'done')"> &#10004; Ticket</div>			
+			<div class="control done" onClick="addTime(0, 'done')">&#10004; Chat</div>
 		<div class="control-group">
 			<div class="control" onClick="addShiftTime(15)">+Shift</div>
 			<div class="control" onClick="addShiftTime(-15)">-Shift</div>			

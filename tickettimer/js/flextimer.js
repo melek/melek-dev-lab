@@ -1,18 +1,22 @@
+/* FlexTimer Class
+
+  Each instance has 4 levers/variables that everything else is derived from:
+  _referenceDate  Date object
+  _pausedDate     null | Date object
+  _format         Object
+  type            string
+*/
+
 class FlexTimer {
   constructor(minuteOffset = 0, forceHours = false, startPaused = false) {  // constructor
     this.reset(minuteOffset, forceHours, startPaused);
   }
 
   reset(minuteOffset = 0, forceHours = this._format.forceHours, startPaused = true) {  // deferred constructor
-    let newReferenceDate;
-    if (minuteOffset == 0) {
-      newReferenceDate = new Date();
-    }
-    else {
-      let msOffset = minuteOffset * 60000;
-      let nowInMs = new Date().getTime();
-      newReferenceDate = new Date(nowInMs + msOffset);
-    }
+    let msOffset = minuteOffset * 60000;
+    let now = new Date();
+    let nowInMs = now.getTime();
+    let newReferenceDate = new Date(nowInMs + msOffset);
 
     this._referenceDate = newReferenceDate; // Date to count down to or up from.
     this.type = this._implicitType;
@@ -21,12 +25,10 @@ class FlexTimer {
     };
 
     if (startPaused) {
-      this._pausedDate = new Date();
-      this._valueAtPause = this._toTimeString(Math.abs(minuteOffset) * 60000);
+      this._pausedDate = now;
     }
     else {
       this._pausedDate = null;
-      this._valueAtPause = null;
     }
   }
 
@@ -41,7 +43,7 @@ class FlexTimer {
     else {
       this._pausedDate = null;
     }
-    this._valueAtPause = source._valueAtPause;
+    this._format = source._format;
     this.type = source.type;
     return this;
   }
@@ -76,30 +78,56 @@ class FlexTimer {
     return Math.max(0, this._referenceTime - now);
   }
 
+  get _msValue() {
+    if (this.type == "countdown") {
+      return this._countdown;
+    } else {
+      return this._countup;
+    }
+  }
+
+  get _displayValue() {
+      return this._toTimeString(this._msValue);
+  }
+
+  get isExpired() {
+    if(this.type == "countup" 
+      || this._countdown > 0 
+      || (this.isPaused && this._msValueAtPause > 0)) {
+      return false;
+    }
+    else {
+      return true;
+    }
+  }
+
   get value() {
     if (this.isPaused) {
       return this._valueAtPause;
     }
-    if (this.type == "countdown") {
-      return this._toTimeString(this._countdown);
-    } else {
-      return this._toTimeString(this._countup);
-    }
+    return this._displayValue;
+  }
+
+  set value(minutes) {
+    let offsetMs = minutes * 60000;
+    this._referenceDate = new Date(new Date().getTime() + offsetMs);
   }
 
   _toTimeString(msTotal, forceHours = this._format.forceHours) {
     let secTotal = Math.floor(msTotal / 1000);
     let hr = Math.floor(secTotal / 3600);
-    if (hr < 1) {
-      if (forceHours) {
-        hr = "";
-      }
-      else {
-        hr = hr + ":";
-      }
+    if (hr < 1 && forceHours) 
+    {
+      hr = "";
     }
+    else {        
+      hr = hr + ":";    
+    }
+
     let min = Math.floor(secTotal / 60) % 60;
-    if (min < 10) { min = "0" + min; }
+    if (min < 10) { 
+      min = "0" + min; 
+    }
 
     let sec = "";
     sec = secTotal % 60;
@@ -107,15 +135,6 @@ class FlexTimer {
     sec = ":" + sec;
 
     return `${hr}${min}${sec}`;
-  }
-
-  get _pausedTime() {
-    if (this.isPaused) {
-      return this._pausedDate.getTime();
-    }
-    else {
-      return null;
-    }
   }
 
   get isPaused() {
@@ -127,9 +146,35 @@ class FlexTimer {
     }
   }
 
+  get _pausedTime() {
+    if (this.isPaused) {
+      return this._pausedDate.getTime();
+    }
+    else {
+      return null;
+    }
+  }
+
+  get _msValueAtPause() {
+    if(this.isPaused) {
+      return this._referenceTime - this._pausedTime;
+    }
+    else {
+      return null;
+    }
+  }
+
+  get _valueAtPause() {
+    if(this.isPaused) {
+      return this._toTimeString(this._msValueAtPause);
+    }
+    else {
+      return null;
+    }
+  }
+
   pause() {
     if (!this.isPaused) {
-      this._valueAtPause = this.value;
       this._pausedDate = new Date();
     }
   }
@@ -137,8 +182,7 @@ class FlexTimer {
   unpause() {
     if (this.isPaused) {
       let nowInMS = new Date().getTime();
-      this._referenceDate = new Date(nowInMS + (this._referenceTime - this._pausedTime));
-      this._valueAtPause = null;
+      this._referenceDate = new Date(nowInMS + this._msValueAtPause);
       this._pausedDate = null;
     }
   }
