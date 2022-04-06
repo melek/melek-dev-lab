@@ -1,5 +1,8 @@
 /* FlexTimer Class
 
+  The FlexTimer works by recording the start time of the timer offset by the 
+  target amount of time (usually in minutes). This is the _referenceTime. 
+
   Each instance has 4 levers/variables that everything else is derived from:
   _referenceDate  Date object
   _pausedDate     null | Date object
@@ -114,7 +117,7 @@ class FlexTimer {
   }
 
   _toTimeString(msTotal, forceHours = this._format.forceHours) {
-    let secTotal = Math.floor(msTotal / 1000);
+    let secTotal = Math.floor(Math.abs(msTotal) / 1000);
     let hr = Math.floor(secTotal / 3600);
     if (hr < 1 && forceHours) 
     {
@@ -137,6 +140,20 @@ class FlexTimer {
     return `${hr}${min}${sec}`;
   }
 
+  /* The pause feature works by setting a 'Paused Date'. This value being non-null is
+     the signal that the timer is paused. When unpausing, the reference time 
+     
+     isPaused:        Is _pausedDate set?
+     _pausedDate:     A date object marking when the timer was paused. 
+     _pausedTime:     The MS value of _pausedDate.
+     _msValueAtPause: The MS value of the timer, so _pausedTime - _referenceTime.
+     _valueAtPause:   The human readable time string of the _msValueAtPause.
+
+     pause():         Sets pausedDate.
+     unpause():       Updates the timer's _referenceTime to be the current time
+                      minus the time elapsed when paused (_msValueAtPause).
+                      Then, it resets pausedDate to null.
+  */
   get isPaused() {
     if (this._pausedDate instanceof Date) {
       return true;
@@ -157,7 +174,7 @@ class FlexTimer {
 
   get _msValueAtPause() {
     if(this.isPaused) {
-      return this._referenceTime - this._pausedTime;
+      return this._pausedTime - this._referenceTime;
     }
     else {
       return null;
@@ -182,7 +199,7 @@ class FlexTimer {
   unpause() {
     if (this.isPaused) {
       let nowInMS = new Date().getTime();
-      this._referenceDate = new Date(nowInMS + this._msValueAtPause);
+      this._referenceDate = new Date(nowInMS - this._msValueAtPause);
       this._pausedDate = null;
     }
   }
