@@ -198,4 +198,4 @@ setInterval(() => {
 		state.elapsed++;
 		refreshClock();
 	}
-}, 1000);
+}, 100);
