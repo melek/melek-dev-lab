@@ -52,6 +52,7 @@ function observable(value) {
 
 // LDG
   function bindInnerHTML(input, observable) {
+    if(typeof(input) != "object") input = document.getElementById(input);
     var initial = observable();
     input.innerHTML = initial;
     observable.subscribe(function(){ input.innerHTML = observable(); });

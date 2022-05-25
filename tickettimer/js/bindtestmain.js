@@ -1,5 +1,5 @@
 var a = observable(0);
-bindInnerHTML(document.getElementById("testheader"), a);
+bindInnerHTML("testheader", a);
 
 var b = observable(0);
 bindInnerHTML(document.getElementById("testparagraph"), b);
