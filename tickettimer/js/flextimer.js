@@ -35,6 +35,7 @@ class FlexTimer {
     }
   }
 
+  // Parses a stringified JSON of this object into a new timer
   parse(source) {
     if (typeof source == "string") {
       source = JSON.parse(source);
@@ -71,14 +72,18 @@ class FlexTimer {
     this._referenceDate = new Date(this._referenceDate.getTime() + minutes * 60000);
   }
 
+  // Returns either the current date/time, or the date/time at which the timer was paused.
+  get _now() {
+    if(this.isPaused)  return this._pausedTime;
+    else return new Date().getTime();
+  }
+
   get _countup() {
-    let now = new Date().getTime();
-    return Math.max(0, now - this._referenceTime);
+    return Math.max(0, this._now - this._referenceTime);
   }
 
   get _countdown() {
-    let now = new Date().getTime();
-    return Math.max(0, this._referenceTime - now);
+    return Math.max(0, this._referenceTime - this._now);
   }
 
   get _msValue() {
@@ -94,9 +99,7 @@ class FlexTimer {
   }
 
   get isExpired() {
-    if(this.type == "countup" 
-      || this._countdown > 0 
-      || (this.isPaused && this._msValueAtPause > 0)) {
+    if(this.type == "countup" || this._countdown > 0) {
       return false;
     }
     else {
@@ -105,9 +108,6 @@ class FlexTimer {
   }
 
   get value() {
-    if (this.isPaused) {
-      return this._valueAtPause;
-    }
     return this._displayValue;
   }
 
@@ -141,13 +141,13 @@ class FlexTimer {
   }
 
   /* The pause feature works by setting a 'Paused Date'. This value being non-null is
-     the signal that the timer is paused. When unpausing, the reference time 
+     the signal that the timer is paused. When unpausing, the reference time is updated
+     by '_msValueAtPause' to maintain the same offset as the timer had when paused.
      
      isPaused:        Is _pausedDate set?
      _pausedDate:     A date object marking when the timer was paused. 
      _pausedTime:     The MS value of _pausedDate.
      _msValueAtPause: The MS value of the timer, so _pausedTime - _referenceTime.
-     _valueAtPause:   The human readable time string of the _msValueAtPause.
 
      pause():         Sets pausedDate.
      unpause():       Updates the timer's _referenceTime to be the current time
@@ -181,15 +181,6 @@ class FlexTimer {
     }
   }
 
-  get _valueAtPause() {
-    if(this.isPaused) {
-      return this._toTimeString(this._msValueAtPause);
-    }
-    else {
-      return null;
-    }
-  }
-
   pause() {
     if (!this.isPaused) {
       this._pausedDate = new Date();
@@ -202,5 +193,10 @@ class FlexTimer {
       this._referenceDate = new Date(nowInMS - this._msValueAtPause);
       this._pausedDate = null;
     }
+  }
+
+  togglepause() {
+    if(this.isPaused) this.unpause();
+    else this.pause();
   }
 }

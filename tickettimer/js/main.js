@@ -68,69 +68,67 @@ function setActionLabel(label) {
 }
 
 function newDot(cssClass = "") {
-	return `<div class='reset-dot ${cssClass}' title="${cssClass} at ${getElapsed()} second into timing"></div>`;
+	return `<div class='reset-dot ${cssClass}' title="${cssClass} at ${elapsed.value}"></div>`;
 }
 
 /* Clock Display */
 /*****************/
-function formatTime(secTotal, forceHours = false, showSeconds = true) {
-	let hr = Math.floor(secTotal / 3600);
-    if(hr < 1 && !forceHours) { hr = ""; } else { hr = hr + ":"; }
-
-	let min = Math.floor(secTotal / 60) % 60;
-    if(min < 10) { min = "0" + min; }
-
-	let sec = "";
-	if(showSeconds) {
-		sec = secTotal % 60;
-		if(sec < 10) sec = "0" + sec;
-		sec = ":" + sec;
-	}
-
-    return `${hr}${min}${sec}`;
-}
-
-function getElapsed() {
-	return Math.round((new Date().getTime() - state.startTime) / 1000);
-}
-
 function refreshClock() {
     document.getElementById("mainClock").innerHTML = timer.value;
-	document.getElementById("shiftClock").innerHTML = formatTime(state.shiftTime, true) + "<br>" + shift.value;
-	if(state.startTime != null) {		
-		document.getElementById("elapsedClock").innerHTML = formatTime(getElapsed(), true)  + "<br>" + elapsed.value;
+	document.getElementById("shiftClock").innerHTML = shift.value;
+	document.getElementById("elapsedClock").innerHTML = elapsed.value;
 
-	} else {
-		document.getElementById("elapsedClock").innerHTML = formatTime(0, true)  + "<br>" + elapsed.value;
-	}
 	saveState();
 }
 
 function setPauseDisplay(setDot = 1) {
-	if(timer.isPaused) {		
-		if(!elapsed.isPaused) {
-			setActionLabel("Resume");
-			document.getElementById("mainClock").classList.add("paused");
-			if(setDot) {
-				document.getElementById("resets").innerHTML += newDot("pause");
-			}
-		} else { // When the elapsed timer is paused, treat the whole timer as 'Off'.
-			document.getElementById("shiftClock").classList.add("paused");
-			document.getElementById("elapsedClock").classList.add("paused");
-			setActionLabel("Start");
-		}
-	} else {
-		document.getElementById("mainClock").classList.remove("paused");
-		if(!elapsed.isPaused) {
-			document.getElementById("shiftClock").classList.remove("paused");
-			document.getElementById("elapsedClock").classList.remove("paused");
-		}
-		setActionLabel("Pause");
+	if(timer.isPaused) document.getElementById("mainClock").classList.add("paused");
+		else document.getElementById("mainClock").classList.remove("paused");
+	if(shift.isPaused) document.getElementById("shiftClock").classList.add("paused");
+		else document.getElementById("shiftClock").classList.remove("paused");
+	if(elapsed.isPaused) document.getElementById("elapsedClock").classList.add("paused");
+		else document.getElementById("elapsedClock").classList.remove("paused");
+
+	if( timer.isPaused &&  elapsed.isPaused) setActionLabel("Start");	
+	if(!timer.isPaused && !elapsed.isPaused) setActionLabel("Pause");
+	if( timer.isPaused && !elapsed.isPaused) {
+		if(setDot) document.getElementById("resets").innerHTML += newDot("pause");	
+		setActionLabel("Unpause");
 	}
+}
+
+/* Button Action Control */
+/*************************/
+
+function mainButtonAction() {
+	if( timer.isPaused &&  elapsed.isPaused) startTimer();
+	else togglePause();
 }
 
 /* Timer */
 /*********/
+function startTimer() {
+	timer.unpause();
+	elapsed.unpause();
+	shift.unpause();
+	setPauseDisplay(false);
+	setActionLabel("Pause");
+}
+
+function togglePause() {
+	if(timer.isPaused) timer.unpause();
+		else timer.pause();
+	setPauseDisplay(true);
+}
+
+function resetTimer() {
+	if (typeof(Storage) !== "undefined") window.localStorage.clear();
+	state = Object.assign({}, getDefaultState());
+	updateShorthandReferences();
+	document.getElementById("resets").innerHTML = "";
+	setActionLabel("Start");
+}
+
 function addTime(minutes, color = "") {
 	timer.addMinutes(minutes);
 	document.getElementById("resets").innerHTML += newDot(color);
@@ -143,6 +141,7 @@ function addTicketTime(minutes, color = "") {
 		timer.value = 0;
 	}
 	addTime(minutes, color);
+	refreshClock();
 }
 
 function addShiftTime(minutes) {
@@ -152,13 +151,15 @@ function addShiftTime(minutes) {
 	refreshClock();
 }
 
-function setPause(newPause, newAllPause) {
-	if(newAllPause == true) newAllPause 
+function setPause(newPause) {	
 	if(newPause == true) {
 		timer.pause();
+		setPauseDisplay(1);
 	} 
 	else {
 		timer.unpause();
+		shift.unpause();
+		elapsed.unpause();
 	}
 	state.pause = newPause;
 	state.allpause = newAllPause;
@@ -168,34 +169,11 @@ function setPause(newPause, newAllPause) {
 	refreshClock();
 }
 
-function togglePause() {
-	if(state.allpause && state.pause) startElapsedTimer();
-	if(timer.isPaused && shift.isPaused) elapsed.reset();
-	setPause(!state.pause);
-}
-
-function resetTimer() {
-	if (typeof(Storage) !== "undefined") window.localStorage.clear();
-	state = Object.assign({}, getDefaultState());
-	updateShorthandReferences();
-	document.getElementById("resets").innerHTML = "";
-	setActionLabel("Start");
-	setPause(1, 1);
-}
-
-function startElapsedTimer() {
-	state.startTime = new Date().getTime();
-}
-
-// Start the countdown timer with a 1 second interval.
+// Refresh the clock on an interval to display the countdown
 setInterval(() => {
 	if(timer.isExpired) {
 		addTime(5, "expire");
 		state.timerIsExpired = true;
-	}
-	if (!state.allpause) {
-		if(state.shiftTime > 0) state.shiftTime--;
-		state.elapsed++;
-		refreshClock();
-	}
+	}			
+	refreshClock();
 }, 100);

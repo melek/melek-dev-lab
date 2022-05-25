@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Flex Timer Tester</title>
+<meta charset="utf-8">
+<style>
+    body {
+        background-color: darkblue;
+        color: yellow;
+        padding: 1rem;
+    }
+</style>
+</head>
+<body>
+    <pre id="output"></pre>
+    <button onclick="timer.togglepause()">Toggle Pause</button>
+<script src="js/flextimer.js?v=1.0"></script>
+<script>
+// Refresh the clock on an interval to display the countdown
+output = document.getElementById("output");
+timer = new FlexTimer;
+
+setInterval(() => {
+	output.innerHTML = 
+`# Flex Timer Values
+
+## Variables
+type =              ` + timer.type + `
+_referenceDate =    ` + timer._referenceDate + `
+_pausedDate =       ` + timer.pausedDate + `
+_format =           ` + JSON.stringify(timer._format) + `
+
+## Public Getters
+value =             ` + timer.value + `
+isExpired =         ` + timer.isExpired + `
+isPaused =          ` + timer.isPaused + `
+
+## Private Getters
+_referenceTime      ` + timer._referenceTime + `
+_implicitType =     ` + timer._implicitType + `
+_now =              ` + timer._now + `
+_countup =          ` + timer._countup + `
+_countdown =        ` + timer._countdown + `
+_msValue =          ` + timer._msValue + `
+_displayValue =     ` + timer._displayValue + `
+_msValueAtPause =   ` + timer._msValueAtPause + `
+_valueAtPause =     ` + timer._valueAtPause + `
+`;
+}, 10);
+
+</script>
+</body>
+</html>
