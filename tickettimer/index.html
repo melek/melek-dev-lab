@@ -14,10 +14,15 @@
 	<div id="controls">
 		<div id="pause" class="control pause" onClick="mainButtonAction()">Start</div>		
 		<div class="control done" onClick="addTicketTime(15, 'done')"> &#10004; Ticket</div>			
-			<div class="control done" onClick="addTime(0, 'done')">&#10004; Chat</div>
+		<div class="control done" onClick="addTime(0, 'done')">&#10004; Chat</div>
+		<div class="control " onClick='document.getElementById("resets").innerHTML += newDot("hold");'>&#10004; Hold</div>
 		<div class="control-group">
 			<div class="control" onClick="addShiftTime(15)">+Shift</div>
-			<div class="control" onClick="addShiftTime(-15)">-Shift</div>			
+			<div class="control" onClick="addShiftTime(-15)">-Shift</div>
+		</div>			
+		<div class="control-group">
+			<div class="control" onClick="addShiftTime(1)">+1</div>
+			<div class="control" onClick="addShiftTime(-1)">-1</div>			
 		</div>
 		<div class="control" onClick="resetTimer()">Clr</div>
 	</div>
