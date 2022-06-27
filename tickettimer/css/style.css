@@ -10,6 +10,7 @@
 	--control-Primary: rgba(255, 161, 122, .75);
 	--control-Good: rgba(182, 243, 156, .5); 
 	--control-Bad: rgba(160, 80, 80, .75); 
+	--control-Info: rgba(160, 160, 220, .75); 
 }
 
 body { 
@@ -136,8 +137,9 @@ body {
 	height: 1.5rem;
 }
 
-.delay { background: var(--control-Seconder); }
+.delay { background: var(--control-Secondary); }
 .done {	background: var(--control-Good); }
+.hold {	background: var(--control-Info); }
 .expire { background: var(--control-Bad); }
 .pause { background: var(--control-Primary); }
 

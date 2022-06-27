@@ -21,6 +21,7 @@ function getDefaultState() {
 	};
 }
 let state = Object.assign({}, getDefaultState());
+initialHTML = document.getElementById("timer").innerHTML;
 
 // Some global references, quicker to type. :P
 var timer;
@@ -124,6 +125,7 @@ function togglePause() {
 function resetTimer() {
 	if (typeof(Storage) !== "undefined") window.localStorage.clear();
 	state = Object.assign({}, getDefaultState());
+	document.getElementById("timer").innerHTML = initialHTML;
 	updateShorthandReferences();
 	document.getElementById("resets").innerHTML = "";
 	setActionLabel("Start");
